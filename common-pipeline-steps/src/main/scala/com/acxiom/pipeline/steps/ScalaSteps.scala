@@ -1,18 +1,20 @@
 package com.acxiom.pipeline.steps
 
-import com.acxiom.pipeline.{PipelineContext, PipelineStepResponse}
-import com.acxiom.pipeline.annotations.StepFunction
+import com.acxiom.pipeline.annotations.{StepFunction, StepObject, StepParameter}
 import com.acxiom.pipeline.utils.ScalaScriptEngine
-import javax.script.SimpleBindings
+import com.acxiom.pipeline.{PipelineContext, PipelineStepResponse}
 import org.apache.log4j.Logger
 
+@StepObject
 object ScalaSteps {
   private val logger = Logger.getLogger(getClass)
   @StepFunction("a7e17c9d-6956-4be0-a602-5b5db4d1c08b",
     "Scala script Step",
-    "Executes a Scala script and returns the result",
-    "Pipeline")
-  def processScript(script: String, pipelineContext: PipelineContext): PipelineStepResponse = {
+    "Executes a script and returns the result",
+    "Pipeline",
+    "Scripting")
+  def processScript(@StepParameter(Some("script"), Some(true), None, Some("scala")) script: String,
+                    pipelineContext: PipelineContext): PipelineStepResponse = {
     val engine = new ScalaScriptEngine
     val result = engine.executeScript(script, pipelineContext)
     handleResult(result)
@@ -20,11 +22,16 @@ object ScalaSteps {
 
   @StepFunction("8bf8cef6-cf32-4d85-99f4-e4687a142f84",
     "Scala script Step with additional object provided",
-    "Executes a Scala script and returns the result",
-    "Pipeline")
-  def processScriptWithValue(script: String, value: Any, pipelineContext: PipelineContext): PipelineStepResponse = {
+    "Executes a script with the provided object and returns the result",
+    "Pipeline",
+    "Scripting")
+  def processScriptWithValue(@StepParameter(Some("script"), Some(true), None, Some("scala")) script: String,
+                             value: Any, `type`: String = "Any",
+                             pipelineContext: PipelineContext): PipelineStepResponse = {
     val engine = new ScalaScriptEngine
-    val result = engine.executeScriptWithObject(script, value, pipelineContext)
+    val bindings = engine.createBindings("logger", logger, "org.apache.log4j.Logger")
+      .setBinding("userValue", value, `type`)
+    val result = engine.executeScriptWithBindings(script, bindings, pipelineContext)
     handleResult(result)
   }
 
